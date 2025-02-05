@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<style>
+    .login-container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 300px;
+    }
+
+    .login-container h2 {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .login-container input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .login-container button {
+        width: 100%;
+        padding: 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .login-container button:hover {
+        background-color: #45a049;
+    }
+
+    .error-message {
+        color: red;
+        text-align: center;
+    }
+</style>
+
+
+<body>
+    <div id="app"> </div>
+    <script>
+
+        let model = {
+
+            data: [{
+                date: null,
+            },],
+            isAdmin: false,
+            admin: { Username: "Robin", Passord: "1234" },
+            apiUrl: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/BreakfastCheck"
+        };
+        let daysOfWeek = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
+        getModelFromSQLAndUpdateView(true);
+
+        let disabledText = model.isAdmin ? "" : "Disabled"
+
+
+
+        async function getModelFromSQLAndUpdateView(firstTime) {
+            try {
+                await axios.get(model.apiUrl)
+                    .then(response => {
+                        response.data.forEach(item => {
+                            // Extract the date field from each event
+                            let dateString = item.date;
+
+                            // Convert the date string to a JavaScript Date object
+                            let itemDate = new Date(dateString);
+                            item.date = itemDate;
+                        });
+                        model.data = response.data;
+                        console.log(model)
+
+                    })
+            }
+
+            catch (error) {
+                console.log(error)
+            };
+            if(firstTime)
+                await checkIfDateShouldBeAdded();
+            updateView();
+        }
+        function updateView() {
+            let disabledText = model.isAdmin ? "" : "disabled"; // Disable checkboxes for non-admins
+            let checked = "checked"
+            let app = document.getElementById('app');
+            let streak = 0;
+            // Start building the HTML table as a string
+            let tableHTML = '<div style="width:100%; height:400px; overflow-y:auto; margin-bottom:20px;">'; // Scrollable container
+            tableHTML += '<table border="1"><thead>';
+
+            // Table header row
+            tableHTML += '<tr>';
+            tableHTML += '<th>Dato</th>';
+            tableHTML += '<th>Dag</th>';
+            tableHTML += '<th>Spist frokost?</th>';
+            tableHTML += '<th>Streak</th>';
+            tableHTML += '</tr></thead><tbody>';
+
+            // Iterate over the model data and build the table rows
+
+            model.data.forEach((item, index) => {
+                tableHTML += '<tr>';
+
+                // Date column
+                tableHTML += `<td>${item.date.toISOString().split('T')[0]}</td>`;
+
+                // Day column
+                tableHTML += `<td>${daysOfWeek[item.date.getDay()]}</td>`;
+
+                // Checkbox column
+                tableHTML += '<td>';
+                if (item.checkMark) {
+                    checked = "checked";
+                }
+                else checked = "";
+                tableHTML += `<input ${checked} ${disabledText} type="checkbox" id="breakfastCheckbox" onchange="putBreakfastCheck('${item.date.toISOString().split('T')[0]}', this.checked)">`;
+
+                tableHTML += '</td>';
+
+                tableHTML += '<td>';
+                    
+                    if(item.checkMark)
+                    streak++
+                else streak = 0;
+                tableHTML += streak;
+                    tableHTML += '</td>';
+                tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table></div>';
+
+            // Set the innerHTML of the app container to the table HTML
+            app.innerHTML = tableHTML;
+
+
+
+            // Append the login form below the table (only once)
+            app.innerHTML += /*HTML*/ `
+            <div class="login-container">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button id="loginButton" onclick="validateLogin()">Login</button>
+    <button id="logoutButton" onclick="logout()">Logout</button>
+    <div class="error-message" id="error-message"></div>
+</div>
+    `;
+        }
+
+        // Function to send POST request to the API using Axios
+        async function postBreakfastCheck(date, checkmark) {
+            // Prepare data to send to the API
+            const data = {
+                date: date,  // Send the date in 'YYYY-MM-DD' format
+                checkMark: checkmark  // Boolean value representing if breakfast is eaten
+            };
+
+            // Make POST request to the API endpoint using Axios
+            axios.post(model.apiUrl, data)
+                .then(function (response) {
+                    // Handle the successful response
+                    console.log('Success:', response.data);
+                })
+                .catch(function (error) {
+                    // Handle errors (e.g., network error)
+                    console.error('Error:', error);
+                });
+
+
+        }
+
+
+        async function checkIfDateShouldBeAdded() {
+            let checkIfDateBool = false;
+            const todaysDate = new Date();
+            const date = new Date();
+
+            // Format the date to 'YYYY-MM-DD' format (ignoring the time)
+            const formattedDate = date.toISOString().split('T')[0];
+
+            // Loop through the data to check if the current date is present
+            
+            const lastObject = model.data.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            console.log(lastObject)
+            if(lastObject != null)
+            date.setDate(lastObject.date.getDate() + 1);
+        
+
+            while (date <= todaysDate) {
+
+                // Ensure element.date is also in 'YYYY-MM-DD' format
+                const formattedDate = date.toISOString().split('T')[0];
+                await postBreakfastCheck(formattedDate, false);
+                date.setDate(date.getDate() + 1);
+            };
+            getModelFromSQLAndUpdateView(false);
+            
+        }
+        function getStreak(){
+
+        }
+
+        function putBreakfastCheck(date, checkmark) {
+            // Construct the data object
+            const data = {
+                date: date,            // Date in 'YYYY-MM-DD' format
+                checkMark: checkmark   // Boolean value (true/false)
+            };
+            // Make a PUT request using Axios
+            axios.put(model.apiUrl, data)
+                .then(response => {
+                    // Handle successful response
+                    console.log('Success:', response.data);
+                    getModelFromSQLAndUpdateView(); // Update the view with the new data
+                })
+                .catch(error => {
+                    // Handle error
+                    console.error('Error updating breakfast check:', error);
+                });
+        }
+
+
+
+
+        function validateLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Check if both fields are filled
+            if (username === '' || password === '') {
+                document.getElementById('error-message').textContent = 'Both fields are required!';
+                return;
+            }
+
+            // Check if the credentials match the stored admin credentials
+            if (username === 'Robin' && password === '1234') {
+                model.isAdmin = true;
+
+                // Hide the login button and show the logout button
+                document.getElementById("loginButton").innerText = "none";
+
+                // Clear any error message
+                document.getElementById("error-message").innerHTML = "";
+
+                // Call the function to update the view after successful login
+                updateView();
+            } else {
+                document.getElementById('error-message').textContent = 'Invalid username or password!';
+            }
+        }
+
+
+        function logout() {
+            // Assuming the logout is successful
+            model.isAdmin = false;
+            document.getElementById("loginButton").innerText = "inline"; // Show the login button again
+            document.getElementById("logoutButton").style.display = "none"; // Hide the logout button
+            document.getElementById("error-message").innerHTML = ""; // Clear any error message
+            updateView();
+        }
+    </script>
+
+</body>
+
+</html>
