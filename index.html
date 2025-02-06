@@ -85,7 +85,6 @@
                             item.date = itemDate;
                         });
                         model.data = response.data;
-                        console.log(model)
 
                     })
             }
@@ -99,6 +98,8 @@
         }
         function updateView() {
             let disabledText = model.isAdmin ? "" : "disabled"; // Disable checkboxes for non-admins
+            let logout = model.isAdmin ? "<button id='logoutButton' onclick='logout()'>Logout</button>" : ""; // Disable logout for non-admins
+            let login = model.isAdmin ? "" : `<button id="loginButton" onclick="validateLogin()">Login</button>`; // Disable login for admins
             let checked = "checked"
             let app = document.getElementById('app');
             let streak = 0;
@@ -158,8 +159,8 @@
     <h2>Login</h2>
     <input type="text" id="username" placeholder="Username" required>
     <input type="password" id="password" placeholder="Password" required>
-    <button id="loginButton" onclick="validateLogin()">Login</button>
-    <button id="logoutButton" onclick="logout()">Logout</button>
+    ${login}
+    ${logout}
     <div class="error-message" id="error-message"></div>
 </div>
     `;
@@ -177,7 +178,6 @@
             axios.post(model.apiUrl, data)
                 .then(function (response) {
                     // Handle the successful response
-                    console.log('Success:', response.data);
                 })
                 .catch(function (error) {
                     // Handle errors (e.g., network error)
@@ -199,7 +199,6 @@
             // Loop through the data to check if the current date is present
             
             const lastObject = model.data.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            console.log(lastObject)
             if(lastObject != null)
             date.setDate(lastObject.date.getDate() + 1);
         
@@ -228,7 +227,6 @@
             axios.put(model.apiUrl, data)
                 .then(response => {
                     // Handle successful response
-                    console.log('Success:', response.data);
                     getModelFromSQLAndUpdateView(); // Update the view with the new data
                 })
                 .catch(error => {
@@ -271,7 +269,6 @@
         function logout() {
             // Assuming the logout is successful
             model.isAdmin = false;
-            document.getElementById("loginButton").innerText = "inline"; // Show the login button again
             document.getElementById("logoutButton").style.display = "none"; // Hide the logout button
             document.getElementById("error-message").innerHTML = ""; // Clear any error message
             updateView();
