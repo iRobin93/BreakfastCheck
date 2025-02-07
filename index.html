@@ -63,7 +63,8 @@
             },],
             isAdmin: false,
             admin: { Username: "Robin", Passord: "1234" },
-            apiUrl: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/BreakfastCheck"
+            apiUrl: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/BreakfastCheck",
+            apiUrl2: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/Authenticate",
         };
         let daysOfWeek = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
         getModelFromSQLAndUpdateView(true);
@@ -92,7 +93,7 @@
             catch (error) {
                 console.log(error)
             };
-            if(firstTime)
+            if (firstTime)
                 await checkIfDateShouldBeAdded();
             updateView();
         }
@@ -137,12 +138,12 @@
                 tableHTML += '</td>';
 
                 tableHTML += '<td>';
-                    
-                    if(item.checkMark)
+
+                if (item.checkMark)
                     streak++
                 else streak = 0;
                 tableHTML += streak;
-                    tableHTML += '</td>';
+                tableHTML += '</td>';
                 tableHTML += '</tr>';
             });
 
@@ -197,11 +198,11 @@
             const formattedDate = date.toISOString().split('T')[0];
 
             // Loop through the data to check if the current date is present
-            
+
             const lastObject = model.data.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            if(lastObject != null)
-            date.setDate(lastObject.date.getDate() + 1);
-        
+            if (lastObject != null)
+                date.setDate(lastObject.date.getDate() + 1);
+
 
             while (date <= todaysDate) {
 
@@ -211,9 +212,9 @@
                 date.setDate(date.getDate() + 1);
             };
             getModelFromSQLAndUpdateView(false);
-            
+
         }
-        function getStreak(){
+        function getStreak() {
 
         }
 
@@ -238,9 +239,28 @@
 
 
 
-        function validateLogin() {
+        async function validateLogin() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+
+
+
+            await axios.post(model.apiUrl2, {
+                Username: username,
+                Password: password
+            })
+                .then(response => {
+                    if (response.data.success) {
+                        model.isAdmin = true;
+                    }
+                })
+                .catch(error => {
+                    if (error.response) {
+                        alert('Authentication failed: ' + error.response.data.message);
+                    } else {
+                        alert('Error: ' + error.message);
+                    }
+                });
 
             // Check if both fields are filled
             if (username === '' || password === '') {
@@ -249,8 +269,7 @@
             }
 
             // Check if the credentials match the stored admin credentials
-            if (username === 'Robin' && password === '1234') {
-                model.isAdmin = true;
+            if (model.isAdmin) {
 
                 // Hide the login button and show the logout button
                 document.getElementById("loginButton").innerText = "none";
