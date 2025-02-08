@@ -65,6 +65,7 @@
             admin: { Username: "Robin", Passord: "1234" },
             apiUrl: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/BreakfastCheck",
             apiUrl2: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/Authenticate",
+            streak: [],
         };
         let daysOfWeek = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
         getModelFromSQLAndUpdateView(true);
@@ -86,7 +87,7 @@
                             item.date = itemDate;
                         });
                         model.data = response.data;
-
+                        model.data = model.data.reverse();
                     })
             }
 
@@ -139,8 +140,26 @@
 
                 tableHTML += '<td>';
 
-                if (item.checkMark)
-                    streak++
+                if (item.checkMark) {
+                    streak = 0;
+                    let index2 = index
+                    while (true) {
+                        
+                        if (!model.data[index2].checkMark) {
+                           
+                            break;
+                        }
+                        else {
+                            
+                            streak++
+                        }
+                        index2++
+                        if(index2 > model.data.length - 1)
+                            break;
+                    }
+
+                }
+
                 else streak = 0;
                 tableHTML += streak;
                 tableHTML += '</td>';
@@ -151,7 +170,7 @@
 
             // Set the innerHTML of the app container to the table HTML
             app.innerHTML = tableHTML;
-
+            
 
 
             // Append the login form below the table (only once)
@@ -176,7 +195,7 @@
             };
 
             // Make POST request to the API endpoint using Axios
-            axios.post(model.apiUrl, data)
+            await axios.post(model.apiUrl, data)
                 .then(function (response) {
                     // Handle the successful response
                 })
@@ -184,7 +203,6 @@
                     // Handle errors (e.g., network error)
                     console.error('Error:', error);
                 });
-
 
         }
 
