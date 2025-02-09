@@ -65,7 +65,6 @@
             admin: { Username: "Robin", Passord: "1234" },
             apiUrl: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/BreakfastCheck",
             apiUrl2: "https://common-hrbbcgcea2c7e0e2.uksouth-01.azurewebsites.net/Authenticate",
-            streak: [],
         };
         let daysOfWeek = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag'];
         getModelFromSQLAndUpdateView(true);
@@ -76,6 +75,7 @@
 
         async function getModelFromSQLAndUpdateView(firstTime) {
             try {
+                let streak = 0;
                 await axios.get(model.apiUrl)
                     .then(response => {
                         response.data.forEach(item => {
@@ -85,6 +85,11 @@
                             // Convert the date string to a JavaScript Date object
                             let itemDate = new Date(dateString);
                             item.date = itemDate;
+                            
+                            if (item.checkMark)
+                                streak++
+                            else streak = 0;
+                            item.streak = streak;
                         });
                         model.data = response.data;
                         model.data = model.data.reverse();
@@ -140,28 +145,10 @@
 
                 tableHTML += '<td>';
 
-                if (item.checkMark) {
-                    streak = 0;
-                    let index2 = index
-                    while (true) {
-                        
-                        if (!model.data[index2].checkMark) {
-                           
-                            break;
-                        }
-                        else {
-                            
-                            streak++
-                        }
-                        index2++
-                        if(index2 > model.data.length - 1)
-                            break;
-                    }
+                
 
-                }
-
-                else streak = 0;
-                tableHTML += streak;
+                
+                tableHTML += item.streak;
                 tableHTML += '</td>';
                 tableHTML += '</tr>';
             });
@@ -170,7 +157,7 @@
 
             // Set the innerHTML of the app container to the table HTML
             app.innerHTML = tableHTML;
-            
+
 
 
             // Append the login form below the table (only once)
