@@ -57,9 +57,13 @@
     <script>
 
         let model = {
-
-            data: [{
+            
+            data: [
+                //First two comes from database, streak is calculated. The array is overwritten from database.
+                { 
                 date: null,
+                checkMark: false,
+                streak: null,
             },],
             isAdmin: false,
             admin: { Username: "Robin", Passord: "1234" },
